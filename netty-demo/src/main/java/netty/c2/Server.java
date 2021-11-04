@@ -46,15 +46,8 @@ public class Server {
 
                 buffer.clear();
                 log.debug("after read...{}", channel);
-
             }
-
-
-
         }
-
-
-
     }
 
 

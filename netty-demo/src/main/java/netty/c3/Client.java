@@ -3,6 +3,7 @@ package netty.c3;
 import java.io.IOException;
 import java.net.InetSocketAddress;
 import java.nio.channels.SocketChannel;
+import java.nio.charset.Charset;
 
 /**
  * @title: Client
@@ -19,10 +20,11 @@ public class Client {
 
         sc.connect(new InetSocketAddress("127.0.0.1", 8887));
 
-        System.out.println("watting....");
+//        System.out.println("watting....");
 
+        sc.write(Charset.defaultCharset().encode("12345678\n9abcdefgfffffffffffffffff\n"));
 
-
+        System.in.read();
 
     }
 
