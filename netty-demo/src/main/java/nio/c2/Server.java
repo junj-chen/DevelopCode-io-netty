@@ -1,4 +1,4 @@
-package netty.c2;
+package nio.c2;
 
 import lombok.extern.slf4j.Slf4j;
 
