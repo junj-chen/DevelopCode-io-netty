@@ -18,7 +18,7 @@ public class SignelClient {
 
         SocketChannel sc = SocketChannel.open();
 
-        sc.connect(new InetSocketAddress("127.0.0.1", 8888));
+        sc.connect(new InetSocketAddress("127.0.0.1", 8885));
 
 //        System.out.println("watting....");
 

@@ -7,6 +7,7 @@ import java.net.InetSocketAddress;
 import java.nio.ByteBuffer;
 import java.nio.channels.*;
 import java.util.Iterator;
+import java.util.concurrent.ConcurrentLinkedQueue;
 
 /**
  * @title: SingleWorksServer
@@ -29,7 +30,7 @@ public class SingleWorksServer {
 
         ServerSocketChannel ssc = ServerSocketChannel.open();
         ssc.configureBlocking(false);
-        ssc.bind(new InetSocketAddress(8888));
+        ssc.bind(new InetSocketAddress(8885));
 
         Selector selector = Selector.open();
         ssc.register(selector, SelectionKey.OP_ACCEPT);
@@ -44,6 +45,7 @@ public class SingleWorksServer {
             while(itr.hasNext()){
 
                 SelectionKey key = itr.next();
+                itr.remove();
 
                 if(key.isAcceptable()){
                     // 客户端注册事件
@@ -73,6 +75,9 @@ public class SingleWorksServer {
         // 用于指定 一个 works中只能保证有一个 selector
         private volatile boolean flag = false;
 
+        // 消息队列进行 线程间的通信
+        private ConcurrentLinkedQueue<Runnable> queue = new ConcurrentLinkedQueue<>();
+
         // 构造函数，指定线程的名字
         public Works(String name) {
             this.name = name;
@@ -85,13 +90,23 @@ public class SingleWorksServer {
 
             if (!flag){
                 selector = Selector.open();
-                work = new Thread(this);  // 初始化线程
+                work = new Thread(this, name);  // 初始化线程
                 work.start();  // 开启一个新线程等待数据的传输
                 flag = true;
             }
-            // 有新的客户端进来就进行注册
-            sc.register(selector, SelectionKey.OP_READ, null); // 将通道注册到selector上面
 
+            queue.add(()->{
+                try {
+                    // 有新的客户端进来就进行注册, 将注册的任务封装为一个任务，放到队列中
+                    sc.register(selector, SelectionKey.OP_READ, null); // 将通道注册到selector上面
+
+                } catch (ClosedChannelException e) {
+                    e.printStackTrace();
+                }
+            });
+
+            // 唤醒 selector,防止下面线程的 selector.select() 阻塞
+            selector.wakeup();
         }
 
 
@@ -103,6 +118,12 @@ public class SingleWorksServer {
                 try {
                     // 进行阻塞
                     selector.select();
+
+                    // 将队列中的任务取出来
+                    Runnable task = queue.poll();
+                    if (task != null){
+                        task.run();  // 执行对 可读事件的注册
+                    }
 
                     Iterator<SelectionKey> itr = selector.selectedKeys().iterator();
 
@@ -118,7 +139,7 @@ public class SingleWorksServer {
                             channel.read(buffer);
 
                             buffer.flip();
-                            System.out.println(new String(buffer.array(), 0, buffer.remaining()));
+                            log.debug("read....{}", new String(buffer.array(), 0, buffer.remaining()));
 
                         }
 
