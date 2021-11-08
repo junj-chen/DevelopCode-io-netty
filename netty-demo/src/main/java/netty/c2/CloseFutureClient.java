@@ -90,8 +90,5 @@ public class CloseFutureClient {
                 group.shutdownGracefully();  // 关闭事件组
             }
         });
-
-
     }
-
 }
