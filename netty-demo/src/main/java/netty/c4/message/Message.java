@@ -1,4 +1,4 @@
-package netty.c4;
+package netty.c4.message;
 
 import java.io.Serializable;
 import java.util.HashMap;
